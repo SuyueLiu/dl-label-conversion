@@ -21,6 +21,22 @@ class Convertor():
 
         return classes, data_folder_name
 
+    def get_num_of_data(self, org_dir):
+        classes, data_folder_name = self.get_classes(org_dir)
+        org_ann_dir = os.path.join(org_dir, data_folder_name, 'ann')
+        ann_files = os.listdir(org_ann_dir)
+        img_mask = []  # store the name of image with objects
+        for ann in tqdm(ann_files):
+            if ann.endswith('.json'):
+                ann_path = os.path.join(org_ann_dir, ann)
+                with open(ann_path, 'r') as f:
+                    anns_info = json.load(f)
+                objects = anns_info['objects']
+                num_objs = len(objects)
+                if num_objs != 0:
+                    img_mask.append(ann)
+        return len(img_mask)
+
     def move_images(self, new_dir, org_dir, image_mask, data_folder_name):
         for img_name in tqdm(image_mask):
             img_name = img_name.replace('.jpg.json', '.jpg')
@@ -157,12 +173,12 @@ class Convertor():
 
 if __name__ == '__main__':
     parse = argparse.ArgumentParser()
-    parse.add_argument('--org_dir', type=str, default='../data/hands6/P01_06',
+    parse.add_argument('--org_dir', type=str, required=True,
                        help='the root path to the data needed to be converted')
-    parse.add_argument('--output_dir', type=str, default='../data/hands',
+    parse.add_argument('--output_dir', type=str, required=True,
                        help='the root path where store the converted labels and images')
-    parse.add_argument('--mode', type=str, default='val', help='training data or val data')
-    parse.add_argument('--write_flag', type=bool, default=True, help='if write the data configuration files')
+    parse.add_argument('--mode', type=str, required=True, default='train', choices=['train', 'val'], help='training data or val data')
+    parse.add_argument('--write_flag', type=bool, default=False, help='if write the data configuration files')
     opt = parse.parse_args()
 
     convertor = Convertor()
