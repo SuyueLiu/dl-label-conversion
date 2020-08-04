@@ -42,7 +42,7 @@ class Epic2Darknet():
         train_imgs_dir = reformat_path(train_imgs_dir)
         with open(train_txt_path, 'a') as f1:
             for train_img in train_imgs:
-                f1.write(os.path.join(train_imgs_dir, train_img) + '\n')
+                f1.write(os.path.join('./images/train', train_img) + '\n')
 
         # write _val.txt
         val_txt_path = os.path.join(root_dir, f"{dataset_name}_val.txt")
@@ -51,7 +51,7 @@ class Epic2Darknet():
         val_imgs_dir = reformat_path(val_imgs_dir)
         with open(val_txt_path, 'a') as f2:
             for val_img in val_imgs:
-                f2.write(os.path.join(val_imgs_dir, val_img) + '\n')
+                f2.write(os.path.join('./images/val', val_img) + '\n')
 
         # write .names
         out_names_path = os.path.join(root_dir, f"{dataset_name}.names")
@@ -153,7 +153,7 @@ class Epic2Darknet():
         annotations = pd.read_csv(self.org_ann_pth)
         participants = os.listdir(self.org_dataset_dir)
         out_img_dir, out_label_dir = self.make_dirs(self.out_dir, self.mode)
-        img_mask = []
+        
         for p in participants:
             if p == '.DS_Store':  # For Mac
                 continue
@@ -163,6 +163,7 @@ class Epic2Darknet():
                 id = id.strip()
                 if id == '.DS_Store':
                     continue
+                img_mask = []
                 id_img_dir = os.path.join(self.org_dataset_dir, p, id)
                 img_names = os.listdir(id_img_dir)
                 for img_name in tqdm(img_names, desc=f"transform labels from {p, id}"):
@@ -202,7 +203,7 @@ class Epic2Darknet():
                         bboxes_info = temp[:]
                     self.write_to_file(out_label_path, bboxes_info)
 
-            self.move_images(out_img_dir, id_img_dir, img_mask, p + '_' + id)
+                self.move_images(out_img_dir, id_img_dir, img_mask, p + '_' + id)
 
 
 if __name__ == '__main__':
