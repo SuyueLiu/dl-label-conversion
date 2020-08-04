@@ -4,6 +4,7 @@ import shutil
 import argparse
 import cv2
 from tqdm import tqdm
+import numbers
 
 
 class Epic2Darknet():
@@ -57,11 +58,8 @@ class Epic2Darknet():
         out_names_path = os.path.join(root_dir, f"{dataset_name}.names")
         names = pd.read_csv(self.org_names_path)['class_key'].tolist()
         with open(out_names_path, 'a') as f:
-            if os.path.exists(out_names_path):
-                pass
-            else:
-                for name in names:
-                    f.write(name + '\n')
+            for name in names:
+                f.write(name + '\n')
 
         # write .data
         datafile_path = os.path.join(root_dir, f"{dataset_name}.data")
@@ -128,6 +126,9 @@ class Epic2Darknet():
         w /= img_w
         h /= img_h
 
+        w = min(1.0, w)
+        h = min(1.0, h)
+
         return [('%.6f' % i) for i in [x_c, y_c, w, h]]
 
     @staticmethod
@@ -167,6 +168,8 @@ class Epic2Darknet():
                 id_img_dir = os.path.join(self.org_dataset_dir, p, id)
                 img_names = os.listdir(id_img_dir)
                 for img_name in tqdm(img_names, desc=f"transform labels from {p, id}"):
+                    if img_name.strip() == '.DS_Store':
+                        continue
                     out_label_path = os.path.join(out_label_dir, p + '_' + id + '-' + img_name.replace('.jpg', '.txt'))
                     if os.path.exists(out_label_path):
                         if img_name not in img_mask:
@@ -191,16 +194,17 @@ class Epic2Darknet():
                                 bbox.insert(0, annotations.loc[ann_idx]['noun_class'])
                                 bboxes_info.append(bbox)
 
-                    if len(bboxes_info) > 1:  # for one object, there are more than one bounding box
-                        temp = bboxes_info[:]
-                        for i in range(len(bboxes_info) - 1):
-                            for box_info in bboxes_info[i + 1:]:
-                                iou = self.bbox_iou(bboxes_info[i][1:], box_info[1:])
-                                if iou > self.iou_thres:
-                                    if box_info in temp:
-                                        del temp[temp.index(box_info)]
+                    if isinstance(self.iou_thres, numbers.Number):
+                        if len(bboxes_info) > 1:  # for one object, there are more than one bounding box
+                            temp = bboxes_info[:]
+                            for i in range(len(bboxes_info) - 1):
+                                for box_info in bboxes_info[i + 1:]:
+                                    iou = self.bbox_iou(bboxes_info[i][1:], box_info[1:])
+                                    if iou > self.iou_thres:
+                                        if box_info in temp:
+                                            del temp[temp.index(box_info)]
 
-                        bboxes_info = temp[:]
+                            bboxes_info = temp[:]
                     self.write_to_file(out_label_path, bboxes_info)
 
                 self.move_images(out_img_dir, id_img_dir, img_mask, p + '_' + id)
@@ -217,9 +221,9 @@ if __name__ == '__main__':
                        help='the local directory of original dataset')
     parse.add_argument('--out_dir', type=str, required=True,
                        help='the output directory')
-    parse.add_argument('--mode', type=str, required=True, choices=['train', 'val'], default='train', 
+    parse.add_argument('--mode', type=str, choices=['train', 'val'], default='train', 
                        help='the train dir or val dir')
-    parse.add_argument('--iou_thres', type=float, required=True, default=0.4, help='to eliminate duplicate bounding boxes')
+    parse.add_argument('--iou_thres', type=float, default=None, help='to eliminate duplicate bounding boxes')
     parse.add_argument('--write_flag', type=bool, default=False, help='whether to write data configuration files')
     opt = parse.parse_args()
 
@@ -230,8 +234,8 @@ if __name__ == '__main__':
     if opt.write_flag:
         modes = ['train', 'val']
         try:
-            epic2darknet.add_extra_files(opt.output_dir)
+            epic2darknet.add_extra_files(opt.out_dir)
         except FileNotFoundError:
             modes.remove(opt.mode)
-            epic2darknet.make_dirs(opt.output_dir, modes[-1])
-            epic2darknet.add_extra_files(opt.output_dir)
+            epic2darknet.make_dirs(opt.out_dir, modes[-1])
+            epic2darknet.add_extra_files(opt.out_dir)
