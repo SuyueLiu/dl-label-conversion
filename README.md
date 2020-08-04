@@ -31,4 +31,4 @@ verify_labels.py [-h] --img_path IMG_PATH --label_path LABEL_PATH
 # Examples
 - [supervise.ly to darknet](https://github.com/SuyueLiu/dissertation-diary/blob/master/prepare_data.ipynb)
 
-- [epic kitchens to darknet](https://github.com/SuyueLiu/dissertation-diary/blob/master/prepare_epic.ipynb)
+- [epic kitchens to darknet](https://github.com/SuyueLiu/dissertation-diary/blob/master/epic55_training.ipynb)
